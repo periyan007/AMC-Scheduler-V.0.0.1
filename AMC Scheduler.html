@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Email Scheduler</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #111827;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --primary: #22c55e;
+      --danger: #ef4444;
+      --border: #1f2937;
+      --accent: #38bdf8;
+      --warn: #f59e0b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      background: linear-gradient(135deg,#0f172a 0%,#1f2937 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 2rem auto 4rem;
+      padding: 0 1rem;
+    }
+    h1,h2 { margin: 0 0 1rem 0; font-weight: 600; line-height: 1.2; }
+    p { line-height: 1.5; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.1rem 1.2rem 1.3rem;
+      margin-bottom: 1.75rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.28), 0 1px 2px rgba(255,255,255,0.04) inset;
+      position: relative;
+      overflow: hidden;
+    }
+    .card:before {
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        radial-gradient(circle at 85% 15%,rgba(56,189,248,0.08),transparent 55%),
+        radial-gradient(circle at 15% 85%,rgba(34,197,94,0.07),transparent 60%);
+      pointer-events:none;
+    }
+    form .grid {
+      display:grid;
+      grid-template-columns: repeat(auto-fit,minmax(240px,1fr));
+      gap: 0.85rem 1.1rem;
+      margin-bottom: .6rem;
+    }
+    label {
+      display:flex;
+      flex-direction:column;
+      gap:0.35rem;
+      font-size:.83rem;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+      color: var(--muted);
+      font-weight:600;
+    }
+    input[type="text"],
+    input[type="email"],
+    input[type="number"],
+    input[type="datetime-local"],
+    textarea {
+      background:#0b1020;
+      color:var(--text);
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:.7rem .75rem;
+      font-size:.9rem;
+      outline:none;
+      transition:border-color .18s, box-shadow .18s;
+      font-family:inherit;
+    }
+    input:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow:0 0 0 1px var(--accent),0 0 0 4px rgba(56,189,248,.15);
+    }
+    textarea { resize: vertical; min-height: 180px; line-height:1.4; }
+    button {
+      --btn-bg: var(--primary);
+      --btn-color: #052e16;
+      margin-top:.9rem;
+      padding:.75rem 1.25rem;
+      background:linear-gradient(135deg,var(--btn-bg),#16a34a);
+      color:var(--btn-color);
+      font-weight:700;
+      border:none;
+      border-radius:10px;
+      cursor:pointer;
+      font-size:.95rem;
+      display:inline-flex;
+      align-items:center;
+      gap:.5rem;
+      box-shadow:0 4px 20px -5px rgba(34,197,94,.5),0 2px 6px -1px rgba(0,0,0,.4);
+      transition: transform .18s, box-shadow .18s, filter .18s;
+    }
+    button:hover { filter:brightness(1.05); transform:translateY(-2px); }
+    button:active { transform:translateY(0); }
+    button.secondary {
+      --btn-bg:#374151;
+      --btn-color:#e5e7eb;
+      background:linear-gradient(135deg,#374151,#475569);
+      box-shadow:0 4px 20px -5px rgba(71,85,105,.5);
+    }
+    button.danger {
+      --btn-bg: var(--danger);
+      --btn-color: #fff;
+      background:linear-gradient(135deg,#ef4444,#b91c1c);
+      box-shadow:0 4px 20px -5px rgba(239,68,68,.55);
+    }
+    fieldset.scheduler-mode {
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding: .9rem 1rem 1rem;
+      background:#0d1426;
+      position:relative;
+      margin-top:1.1rem;
+    }
+    fieldset.scheduler-mode legend {
+      padding:0 .6rem;
+      font-size:.78rem;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color: var(--accent);
+      font-weight:700;
+    }
+    fieldset.scheduler-mode label.inline {
+      display:inline-flex;
+      align-items:center;
+      gap:.45rem;
+      margin-right:1.25rem;
+      font-size:.8rem;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+      color:var(--muted);
+      cursor:pointer;
+      font-weight:600;
+    }
+    .mode-fields {
+      display:grid;
+      gap:.9rem;
+      margin-top:.7rem;
+      grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
+    }
+    table {
+      width:100%;
+      border-collapse:collapse;
+      margin-top:.7rem;
+      background:#0d1426;
+      border:1px solid var(--border);
+      border-radius:12px;
+      overflow:hidden;
+      font-size:.85rem;
+    }
+    thead { background:#162033; }
+    th,td {
+      padding:.65rem .75rem;
+      border-bottom:1px solid #1e2a41;
+      text-align:left;
+      vertical-align:top;
+      font-weight:500;
+    }
+    th {
+      font-size:.7rem;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+      color: var(--muted);
+    }
+    tbody tr:last-child td { border-bottom:none; }
+    .status-badge {
+      display:inline-flex;
+      align-items:center;
+      gap:.4rem;
+      padding:.25rem .55rem;
+      border-radius: 999px;
+      font-size:.65rem;
+      letter-spacing:.05em;
+      font-weight:600;
+      text-transform:uppercase;
+      background:#1f2937;
+      color:#9ca3af;
+      position:relative;
+      overflow:hidden;
+    }
+    .status-scheduled { background:#164e63; color:#67e8f9; }
+    .status-sent { background:#14532d; color:#6ee7b7; }
+    .status-failed { background:#7f1d1d; color:#fda4af; }
+    .status-cancelled { background:#3b3b3b; color:#d1d5db; }
+    .countdown.due { color:var(--danger); font-weight:700; }
+    .countdown.warning { color:var(--warn); font-weight:600; }
+    .flex { display:flex; gap:.6rem; flex-wrap:wrap; }
+    .actions button {
+      font-size:.68rem;
+      padding:.45rem .75rem;
+      margin:0;
+      box-shadow:none;
+    }
+    .scroll-x { overflow-x:auto; }
+    .fade-enter { animation:fadeIn .45s ease; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(6px);} to {opacity:1; transform:translateY(0);} }
+    .pill {
+      background:#1e293b;
+      color:#94a3b8;
+      padding:.35rem .6rem;
+      border-radius:999px;
+      font-size:.6rem;
+      letter-spacing:.05em;
+      font-weight:600;
+      text-transform:uppercase;
+    }
+    .inline-note { font-size:.7rem; color:var(--muted); margin-top:.2rem; }
+    .danger-text { color: var(--danger); }
+    .muted { color: var(--muted); }
+    .divider {
+      height:1px;
+      background:linear-gradient(90deg,transparent,#1f2937,transparent);
+      margin:1.2rem 0;
+    }
+    .responsive-buttons { display:flex; flex-wrap:wrap; gap:.5rem; }
+    @media (max-width:760px){
+      h1 { font-size:1.65rem; }
+      table { font-size:.78rem; }
+      th,td { padding:.55rem .55rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Email Scheduler <span class="pill">Client UI</span></h1>
+    <div class="card">
+      <h2 style="margin-top:0;">Create Schedule</h2>
+      <form id="scheduleForm" autocomplete="off">
+        <div class="grid">
+          <label>
+            To Email
+            <input type="email" name="toEmail" required placeholder="recipient@example.com" />
+          </label>
+            <label>
+            To Name
+            <input type="text" name="toName" placeholder="Recipient Name" />
+          </label>
+          <label>
+            CC
+            <input type="text" name="cc" placeholder="cc1@example.com, cc2@example.com" />
+          </label>
+          <label>
+            BCC
+            <input type="text" name="bcc" placeholder="hidden@example.com" />
+          </label>
+          <label>
+            Your Email (Reminder)
+            <input type="email" name="userEmail" required placeholder="you@example.com" />
+          </label>
+          <label>
+            Reply-To
+            <input type="email" name="replyTo" placeholder="reply-to@example.com" />
+          </label>
+          <label>
+            Subject
+            <input type="text" name="subject" required placeholder="Subject line" />
+          </label>
+          <label>
+            Notify Before (min)
+            <input type="number" name="notifyBeforeMinutes" min="0" value="1440" />
+          </label>
+        </div>
+
+        <label>
+          HTML Content
+          <textarea name="body" required><p>Hello,</p><p>This is a scheduled email.</p><p>Regards,<br/>Scheduler</p></textarea>
+        </label>
+        <div class="inline-note">You can include simple HTML tags. Avoid external scripts.</div>
+
+        <fieldset class="scheduler-mode">
+          <legend>When To Send</legend>
+          <div class="flex" style="align-items:center;">
+            <label class="inline">
+              <input type="radio" name="whenMode" value="datetime" checked />
+              Specific Date/Time (UTC)
+            </label>
+            <input type="datetime-local" name="sendAtIso" style="max-width:240px;" />
+            <label class="inline">
+              <input type="radio" name="whenMode" value="delay" />
+              After Delay (Minutes)
+            </label>
+            <input type="number" name="delayMinutes" min="0" value="60" style="max-width:140px;" />
+          </div>
+          <div class="inline-note">
+            Pick either a UTC timestamp or a relative delay. All scheduling is stored in UTC on the server.
+          </div>
+        </fieldset>
+
+        <div class="responsive-buttons">
+          <button type="submit" id="createBtn">Create Schedule</button>
+          <button type="button" id="resetBtn" class="secondary">Reset</button>
+          <button type="button" id="refreshBtn" class="secondary">Refresh List</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0;">Scheduled Emails</h2>
+      <div class="flex" style="align-items:center; justify-content:space-between;">
+        <div class="inline-note">Live countdown updates every second. Times shown in UTC.</div>
+        <div><button type="button" id="autoRefreshBtn" class="secondary" data-enabled="true">Auto Refresh: ON</button></div>
+      </div>
+      <div class="divider"></div>
+      <div id="list" class="scroll-x fade-enter"></div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0;">Notes</h2>
+      <ul style="margin-top:.2rem; line-height:1.6;">
+        <li>This front-end relies on a backend at <code>/api/schedules</code> (Node/Express app previously provided).</li>
+        <li>Emails are sent by your server using SMTP (Nodemailer); the browser cannot send SMTP directly.</li>
+        <li>Reminder email goes to the "Your Email (Reminder)" address the specified number of minutes before send time.</li>
+        <li>Statuses: <strong>scheduled</strong>, <strong>sent</strong>, <strong>failed</strong>, <strong>cancelled</strong>.</li>
+        <li>You can cancel any scheduled email before it is sent.</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+  // ================= Utility =================
+  const $ = sel => document.querySelector(sel);
+  const $$ = sel => Array.from(document.querySelectorAll(sel));
+
+  function formDataToObject(form) {
+    const fd = new FormData(form);
+    const obj = {};
+    fd.forEach((v,k)=>{ obj[k]=v; });
+    return obj;
+  }
+
+  function escapeHtml(str="") {
+    const div = document.createElement('div');
+    div.innerText = str;
+    return div.innerHTML;
+  }
+
+  function isoUTCFromLocalInput(dtValue) {
+    // dtValue from input type="datetime-local" is interpreted as local time; convert to UTC ISO
+    const d = new Date(dtValue);
+    if (isNaN(d.getTime())) return null;
+    return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString();
+  }
+
+  function classifyCountdown(msRemaining) {
+    if (msRemaining <= 0) return 'due';
+    const minutes = msRemaining / 60000;
+    if (minutes < 5) return 'due';
+    if (minutes < 60) return 'warning';
+    return '';
+  }
+
+  // ================= Rendering =================
+  let schedulesCache = [];
+  let countdownTimer = null;
+
+  function renderSchedules() {
+    const container = $('#list');
+    container.innerHTML = '';
+    if (!schedulesCache.length) {
+      container.innerHTML = '<p class="muted" style="margin:.2rem 0;">No schedules yet.</p>';
+      return;
+    }
+
+    const table = document.createElement('table');
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Recipient</th>
+            <th>Subject</th>
+          <th>Scheduled (UTC)</th>
+          <th>Notify Before</th>
+          <th>Status</th>
+          <th>Remaining</th>
+          <th>Attempts</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    `;
+    const tbody = table.querySelector('tbody');
+
+    schedulesCache.forEach(s => {
+      const tr = document.createElement('tr');
+      const statusClass = `status-${s.status}`;
+      const dtISO = new Date(s.scheduled_at_ms).toISOString();
+      tr.innerHTML = `
+        <td>${s.id}</td>
+        <td>${escapeHtml(s.to_email)}</td>
+        <td>${escapeHtml(s.subject)}</td>
+        <td><code style="font-size:.7rem;">${dtISO}</code></td>
+        <td>${s.notify_before_minutes}m</td>
+        <td><span class="status-badge ${statusClass}">${escapeHtml(s.status)}</span></td>
+        <td class="countdown" data-ts="${s.scheduled_at_ms}"></td>
+        <td>${s.attempts ?? 0}/${s.max_attempts ?? 5}${s.last_error ? `<br/><span class="inline-note danger-text">Err: ${escapeHtml((s.last_error||'').slice(0,60))}</span>`:''}</td>
+        <td class="actions">
+          ${
+            s.status === 'scheduled'
+              ? `<button data-action="cancel" data-id="${s.id}" class="danger">Cancel</button>`
+              : ''
+          }
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    container.appendChild(table);
+    bindActionButtons();
+    startCountdownLoop();
+  }
+
+  function updateCountdowns() {
+    const now = Date.now();
+    $$('.countdown').forEach(el => {
+      const ts = parseInt(el.getAttribute('data-ts'), 10);
+      const diff = ts - now;
+      const cls = classifyCountdown(diff);
+      el.classList.remove('due','warning');
+      if (cls) el.classList.add(cls);
+      if (diff <= 0) {
+        el.textContent = 'Due / Sending...';
+        return;
+      }
+      const secs = Math.floor(diff / 1000);
+      const days = Math.floor(secs / 86400);
+      const hours = Math.floor((secs % 86400) / 3600);
+      const minutes = Math.floor((secs % 3600) / 60);
+      const seconds = secs % 60;
+      let parts = [];
+      if (days) parts.push(days + 'd');
+      if (hours) parts.push(hours + 'h');
+      parts.push(minutes + 'm');
+      parts.push(seconds + 's');
+      el.textContent = parts.join(' ');
+    });
+  }
+
+  function startCountdownLoop() {
+    if (countdownTimer) clearInterval(countdownTimer);
+    updateCountdowns();
+    countdownTimer = setInterval(updateCountdowns, 1000);
+  }
+
+  // ================= API =================
+  async function fetchSchedules() {
+    const res = await fetch('/api/schedules?limit=500');
+    if (!res.ok) {
+      throw new Error('Failed to load schedules');
+    }
+    schedulesCache = await res.json();
+    renderSchedules();
+  }
+
+  async function createSchedule(payload) {
+    const res = await fetch('/api/schedules', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.error || 'Failed to create schedule');
+    }
+    return res.json();
+  }
+
+  async function cancelSchedule(id) {
+    const res = await fetch('/api/schedules/'+id, { method:'DELETE' });
+    if (!res.ok) {
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.error || 'Failed to cancel');
+    }
+    return res.json();
+  }
+
+  // ================= Events =================
+  function bindActionButtons() {
+    $$('#list button[data-action="cancel"]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-id');
+        if (!confirm('Cancel schedule #' + id + '?')) return;
+        btn.disabled = true;
+        btn.textContent = 'Cancelling...';
+        try {
+          await cancelSchedule(id);
+          await fetchSchedules();
+        } catch (e) {
+          alert(e.message);
+          btn.disabled = false;
+          btn.textContent = 'Cancel';
+        }
+      });
+    });
+  }
+
+  $('#scheduleForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const data = formDataToObject(e.target);
+    const whenMode = data.whenMode;
+
+    let payload = {
+      toEmail: data.toEmail,
+      toName: data.toName || undefined,
+      cc: data.cc || undefined,
+      bcc: data.bcc || undefined,
+      subject: data.subject,
+      body: data.body,
+      replyTo: data.replyTo || undefined,
+      userEmail: data.userEmail,
+      notifyBeforeMinutes: Number(data.notifyBeforeMinutes || '0')
+    };
+
+    if (whenMode === 'datetime') {
+      if (!data.sendAtIso) {
+        alert('Please choose a date/time (UTC).');
+        return;
+      }
+      const iso = isoUTCFromLocalInput(data.sendAtIso);
+      if (!iso) {
+        alert('Invalid date/time.');
+        return;
+      }
+      payload.sendAtIso = iso;
+    } else {
+      const delay = Number(data.delayMinutes || '0');
+      if (delay < 0) {
+        alert('Delay minutes must be ≥ 0');
+        return;
+      }
+      payload.delayMinutes = delay;
+    }
+
+    const btn = $('#createBtn');
+    btn.disabled = true;
+    btn.textContent = 'Creating...';
+    try {
+      await createSchedule(payload);
+      e.target.reset();
+      // restore defaults
+      $('input[name="notifyBeforeMinutes"]').value = 1440;
+      $('input[name="delayMinutes"]').value = 60;
+      $('input[name="whenMode"][value="datetime"]').checked = true;
+      await fetchSchedules();
+      btn.textContent = 'Created ✓';
+      setTimeout(()=> {
+        btn.disabled = false;
+        btn.textContent = 'Create Schedule';
+      }, 1200);
+    } catch (err) {
+      alert(err.message);
+      btn.disabled = false;
+      btn.textContent = 'Create Schedule';
+    }
+  });
+
+  $('#resetBtn').addEventListener('click', () => {
+    const f = $('#scheduleForm');
+    f.reset();
+    $('input[name="notifyBeforeMinutes"]').value = 1440;
+    $('input[name="delayMinutes"]').value = 60;
+  });
+
+  $('#refreshBtn').addEventListener('click', async () => {
+    $('#refreshBtn').disabled = true;
+    $('#refreshBtn').textContent = 'Refreshing...';
+    try {
+      await fetchSchedules();
+    } finally {
+      $('#refreshBtn').disabled = false;
+      $('#refreshBtn').textContent = 'Refresh List';
+    }
+  });
+
+  // Auto refresh toggle
+  let autoRefresh = true;
+  let autoRefreshInterval = setInterval(()=> {
+    if (autoRefresh) fetchSchedules().catch(()=>{});
+  }, 30_000);
+
+  $('#autoRefreshBtn').addEventListener('click', () => {
+    autoRefresh = !autoRefresh;
+    $('#autoRefreshBtn').dataset.enabled = autoRefresh ? 'true':'false';
+    $('#autoRefreshBtn').textContent = 'Auto Refresh: ' + (autoRefresh ? 'ON' : 'OFF');
+  });
+
+  // Startup
+  (async function init() {
+    try {
+      await fetchSchedules();
+    } catch (e) {
+      $('#list').innerHTML = '<p class="danger-text">Failed to load schedules: ' + escapeHtml(e.message) + '</p>';
+    }
+  })();
+  </script>
+</body>
+</html>
